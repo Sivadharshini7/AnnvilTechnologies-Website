@@ -46,9 +46,32 @@ const MapPinIcon = () => (
   </svg>
 )
 
+// ── RESPONSIVE HOOK ────────────────────────────────────────────────────────
+const useBreakpoint = () => {
+  const [bp, setBp] = useState(() => {
+    if (typeof window === 'undefined') return 'desktop'
+    if (window.innerWidth < 768) return 'mobile'
+    if (window.innerWidth < 1024) return 'tablet'
+    return 'desktop'
+  })
+  useEffect(() => {
+    const handler = () => {
+      if (window.innerWidth < 768) setBp('mobile')
+      else if (window.innerWidth < 1024) setBp('tablet')
+      else setBp('desktop')
+    }
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
+  return bp
+}
+
 // ── NAVBAR ─────────────────────────────────────────────────────────────────
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const bp = useBreakpoint()
+  const isMobile = bp === 'mobile'
+  const isTablet = bp === 'tablet'
 
   const scrollToSection = (id) => {
     setMobileOpen(false)
@@ -63,6 +86,100 @@ const Navbar = () => {
     { label: 'Partners', id: 'partners' },
   ]
 
+  // Close menu when clicking outside
+  useEffect(() => {
+    if (!mobileOpen) return
+    const handler = (e) => {
+      if (!e.target.closest('#mobile-nav-wrapper')) setMobileOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [mobileOpen])
+
+  if (isMobile || isTablet) {
+    return (
+      <div id="mobile-nav-wrapper" style={{ position: 'fixed', top: '16px', left: '16px', right: '16px', zIndex: 1000, fontFamily: 'Manrope, sans-serif' }}>
+        {/* Mobile/Tablet top bar */}
+        <div style={{
+          background: colors.navWhite,
+          borderRadius: mobileOpen ? '20px 20px 0 0' : '50px',
+          padding: '10px 16px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.10)',
+          transition: 'border-radius 0.2s',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }} onClick={() => scrollToSection('home')}>
+            <img src={annvilLogo} style={{ height: '30px', objectFit: 'contain' }}
+              onError={e => { e.target.style.display = 'none' }} alt="Annvil Logo" />
+            <span style={{ fontWeight: 800, fontSize: isTablet ? '18px' : '15px', color: '#000', fontFamily: 'Syne, sans-serif', whiteSpace: 'nowrap' }}>
+              Annvil Technologies
+            </span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {isTablet && (
+              <button onClick={() => scrollToSection('contact')}
+                style={{ background: '#7C3AED', color: '#fff', border: 'none', borderRadius: '50px', padding: '8px 20px', fontWeight: 600, fontSize: '13px', cursor: 'pointer', fontFamily: 'Syne, sans-serif', whiteSpace: 'nowrap' }}>
+                Contact Us →
+              </button>
+            )}
+            {/* Hamburger */}
+            <button onClick={() => setMobileOpen(o => !o)}
+              style={{ background: 'none', border: '1px solid #E5E7EB', borderRadius: '8px', padding: '6px 10px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '4px', justifyContent: 'center', alignItems: 'center' }}
+              aria-label="Toggle menu">
+              <span style={{ display: 'block', width: '20px', height: '2px', background: mobileOpen ? '#7C3AED' : '#111', transition: 'all 0.2s', transform: mobileOpen ? 'rotate(45deg) translateY(6px)' : 'none' }} />
+              <span style={{ display: 'block', width: '20px', height: '2px', background: mobileOpen ? '#7C3AED' : '#111', transition: 'all 0.2s', opacity: mobileOpen ? 0 : 1 }} />
+              <span style={{ display: 'block', width: '20px', height: '2px', background: mobileOpen ? '#7C3AED' : '#111', transition: 'all 0.2s', transform: mobileOpen ? 'rotate(-45deg) translateY(-6px)' : 'none' }} />
+            </button>
+          </div>
+        </div>
+
+        {/* Dropdown nav */}
+        <AnimatePresence>
+          {mobileOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+              style={{
+                background: colors.navWhite,
+                borderRadius: '0 0 20px 20px',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                overflow: 'hidden',
+              }}>
+              {navLinks.map((link, idx) => (
+                <button key={link.id} onClick={() => scrollToSection(link.id)}
+                  style={{
+                    display: 'block', width: '100%', textAlign: 'left',
+                    padding: '14px 20px', background: 'none', border: 'none',
+                    borderTop: idx === 0 ? '1px solid #F3F4F6' : '1px solid #F3F4F6',
+                    fontSize: '15px', color: '#111', fontWeight: 500,
+                    cursor: 'pointer', fontFamily: 'Manrope, sans-serif',
+                    transition: 'background 0.15s, color 0.15s',
+                  }}
+                  onMouseEnter={e => { e.target.style.background = '#F5F3FF'; e.target.style.color = '#7C3AED' }}
+                  onMouseLeave={e => { e.target.style.background = 'none'; e.target.style.color = '#111' }}>
+                  {link.label}
+                </button>
+              ))}
+              {!isTablet && (
+                <div style={{ padding: '12px 20px 16px' }}>
+                  <button onClick={() => scrollToSection('contact')}
+                    style={{ width: '100%', background: '#7C3AED', color: '#fff', border: 'none', borderRadius: '50px', padding: '12px 20px', fontWeight: 600, fontSize: '15px', cursor: 'pointer', fontFamily: 'Syne, sans-serif' }}>
+                    Contact Us →
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    )
+  }
+
+  // Desktop nav (original)
   return (
     <motion.nav style={{
       position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)',
@@ -128,34 +245,55 @@ const CountUp = ({ end }) => {
 // ── HERO ───────────────────────────────────────────────────────────────────
 const HeroSection = () => {
   const ref = useRef(null)
+  const bp = useBreakpoint()
+  const isMobile = bp === 'mobile'
+  const isTablet = bp === 'tablet'
+
+  const sectionPadding = isMobile
+    ? '80px 20px 60px'
+    : isTablet
+    ? '100px 40px 60px'
+    : '80px 80px 60px'
+
   return (
     <section id="home" ref={ref} style={{
-      background: colors.darkBg, minHeight: '100vh',
-      display: 'flex', alignItems: 'center',
-      paddingTop: '80px', paddingLeft: '80px', paddingRight: '80px',
-      fontFamily: 'Manrope, sans-serif', overflow: 'hidden',
+      background: colors.darkBg,
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      padding: sectionPadding,
+      fontFamily: 'Manrope, sans-serif',
+      overflow: 'hidden',
     }}>
-      <div style={{ display: 'flex', gap: '60px', alignItems: 'center', width: '100%' }}>
-        <motion.div style={{ flex: '0 0 45%' }} initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
+      <div style={{
+        display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
+        gap: isMobile ? '40px' : isTablet ? '40px' : '60px',
+        alignItems: isMobile ? 'flex-start' : 'center',
+        width: '100%',
+      }}>
+        <motion.div
+          style={{ flex: isMobile ? '1' : isTablet ? '0 0 50%' : '0 0 45%', width: '100%' }}
+          initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
           <div style={{ border: '1px solid #333', borderRadius: '999px', padding: '6px 14px', fontSize: '13px', color: '#aaa', display: 'inline-block', marginBottom: '20px' }}>
             NEP 2020 Aligned | BFSI SSC Certified
           </div>
-          <h1 style={{ fontSize: 'clamp(42px,5vw,68px)', fontWeight: 900, color: '#fff', lineHeight: 1.1, marginBottom: '24px', fontFamily: 'Manrope, sans-serif' }}>
+          <h1 style={{ fontSize: isMobile ? '36px' : isTablet ? '44px' : 'clamp(42px,5vw,68px)', fontWeight: 900, color: '#fff', lineHeight: 1.1, marginBottom: '24px', fontFamily: 'Manrope, sans-serif' }}>
             India's Leading Fintech Training Services Company
           </h1>
-          <p style={{ fontSize: '17px', color: '#C0C0C0', lineHeight: 1.7, marginBottom: '36px', maxWidth: '480px' }}>
+          <p style={{ fontSize: isMobile ? '15px' : '17px', color: '#C0C0C0', lineHeight: 1.7, marginBottom: '36px', maxWidth: '480px' }}>
             Annvil Technologies bridges academia and industry with real-time, hands-on ecosystems that cultivate an efficient, job-ready commerce and finance workforce for India.
           </p>
-          <div style={{ display: 'flex', gap: '16px', marginBottom: '40px' }}>
+          <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '16px', marginBottom: '40px' }}>
             <motion.button onClick={() => document.getElementById('certifications').scrollIntoView({ behavior: 'smooth' })}
-              style={{ background: colors.blue, color: '#fff', border: 'none', borderRadius: '8px', padding: '14px 28px', fontWeight: 600, fontSize: '16px', cursor: 'pointer', fontFamily: 'Manrope, sans-serif' }}
+              style={{ background: colors.blue, color: '#fff', border: 'none', borderRadius: '8px', padding: '14px 28px', fontWeight: 600, fontSize: '16px', cursor: 'pointer', fontFamily: 'Manrope, sans-serif', width: isMobile ? '100%' : 'auto' }}
               whileHover={{ scale: 1.02 }}
               onMouseEnter={e => e.target.style.background = colors.blueDark}
               onMouseLeave={e => e.target.style.background = colors.blue}>
               Explore Programs
             </motion.button>
-            <a href={brochure} download="Nergy_Vidya_Brochure.pdf" style={{ textDecoration: 'none' }}>
-              <button style={{ border: '1px solid #555', color: '#fff', background: 'transparent', borderRadius: '8px', padding: '14px 28px', fontWeight: 600, fontSize: '16px', cursor: 'pointer', fontFamily: 'Manrope, sans-serif' }}
+            <a href={brochure} download="Nergy_Vidya_Brochure.pdf" style={{ textDecoration: 'none', width: isMobile ? '100%' : 'auto' }}>
+              <button style={{ border: '1px solid #555', color: '#fff', background: 'transparent', borderRadius: '8px', padding: '14px 28px', fontWeight: 600, fontSize: '16px', cursor: 'pointer', fontFamily: 'Manrope, sans-serif', width: isMobile ? '100%' : 'auto' }}
                 onMouseEnter={e => { e.target.style.borderColor = colors.blue; e.target.style.color = colors.blue }}
                 onMouseLeave={e => { e.target.style.borderColor = '#555'; e.target.style.color = '#fff' }}>
                 Download Brochure
@@ -164,31 +302,53 @@ const HeroSection = () => {
           </div>
         </motion.div>
 
-        {/* Vertical image marquee */}
-        <div style={{ flex: '0 0 50%', position: 'relative', height: '600px', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '120px', background: 'linear-gradient(to bottom,#0D0D0D,transparent)', zIndex: 2, pointerEvents: 'none' }} />
-          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '120px', background: 'linear-gradient(to top,#0D0D0D,transparent)', zIndex: 2, pointerEvents: 'none' }} />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', animation: 'scrollUp 18s linear infinite' }} className="marquee-vertical">
+        {/* Vertical image marquee — hidden on mobile, shown on tablet/desktop */}
+        {!isMobile && (
+          <div style={{ flex: isTablet ? '0 0 46%' : '0 0 50%', position: 'relative', height: isTablet ? '480px' : '600px', overflow: 'hidden', borderRadius: '20px' }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '120px', background: 'linear-gradient(to bottom,#0D0D0D,transparent)', zIndex: 2, pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '120px', background: 'linear-gradient(to top,#0D0D0D,transparent)', zIndex: 2, pointerEvents: 'none' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', animation: 'scrollUp 18s linear infinite' }} className="marquee-vertical">
+              {[
+                { img: hero1, title: 'Industry-Institute Engagement Models' },
+                { img: hero2, title: 'Fintech Labs' },
+                { img: hero3, title: 'Training Programs for Students and Faculties' },
+                { img: hero4, title: 'Industry-Academia Connects' },
+                { img: hero1, title: 'Industry-Institute Engagement Models' },
+                { img: hero2, title: 'Fintech Labs' },
+                { img: hero3, title: 'Training Programs for Students and Faculties' },
+                { img: hero4, title: 'Industry-Academia Connects' },
+              ].map((card, idx) => (
+                <div key={idx} style={{ position: 'relative', borderRadius: '20px', overflow: 'hidden', width: '100%', height: '200px', flexShrink: 0 }}>
+                  <img src={card.img} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} alt={card.title} />
+                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '80px', background: 'linear-gradient(to top,rgba(0,0,0,0.85),transparent)' }} />
+                  <h3 style={{ position: 'absolute', bottom: '16px', left: '20px', right: '20px', color: '#fff', fontFamily: 'Manrope, sans-serif', fontSize: '16px', fontWeight: 700, lineHeight: 1.3, margin: 0 }}>
+                    {card.title}
+                  </h3>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* On mobile: show a horizontal scroll of images instead */}
+        {isMobile && (
+          <div style={{ width: '100%', overflowX: 'auto', display: 'flex', gap: '12px', paddingBottom: '8px' }}>
             {[
               { img: hero1, title: 'Industry-Institute Engagement Models' },
               { img: hero2, title: 'Fintech Labs' },
-              { img: hero3, title: 'Training Programs for Students and Faculties' },
-              { img: hero4, title: 'Industry-Academia Connects' },
-              { img: hero1, title: 'Industry-Institute Engagement Models' },
-              { img: hero2, title: 'Fintech Labs' },
-              { img: hero3, title: 'Training Programs for Students and Faculties' },
-              { img: hero4, title: 'Industry-Academia Connects' },
+              { img: hero3, title: 'Training Programs' },
+              { img: hero4, title: 'Industry-Academia' },
             ].map((card, idx) => (
-              <div key={idx} style={{ position: 'relative', borderRadius: '20px', overflow: 'hidden', width: '100%', height: '200px', flexShrink: 0 }}>
+              <div key={idx} style={{ position: 'relative', borderRadius: '16px', overflow: 'hidden', minWidth: '200px', height: '140px', flexShrink: 0 }}>
                 <img src={card.img} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} alt={card.title} />
-                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '80px', background: 'linear-gradient(to top,rgba(0,0,0,0.85),transparent)' }} />
-                <h3 style={{ position: 'absolute', bottom: '16px', left: '20px', right: '20px', color: '#fff', fontFamily: 'Manrope, sans-serif', fontSize: '16px', fontWeight: 700, lineHeight: 1.3, margin: 0 }}>
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '60px', background: 'linear-gradient(to top,rgba(0,0,0,0.85),transparent)' }} />
+                <h3 style={{ position: 'absolute', bottom: '10px', left: '12px', right: '12px', color: '#fff', fontFamily: 'Manrope, sans-serif', fontSize: '12px', fontWeight: 700, lineHeight: 1.3, margin: 0 }}>
                   {card.title}
                 </h3>
               </div>
             ))}
           </div>
-        </div>
+        )}
       </div>
     </section>
   )
@@ -197,9 +357,21 @@ const HeroSection = () => {
 // ── STATS ──────────────────────────────────────────────────────────────────
 const StatsSection = () => {
   const ref = useRef(null)
+  const bp = useBreakpoint()
+  const isMobile = bp === 'mobile'
+  const isTablet = bp === 'tablet'
+
   return (
     <motion.section ref={ref}
-      style={{ background: colors.cardDark, padding: '48px 80px', display: 'flex', justifyContent: 'space-evenly', flexWrap: 'wrap', gap: '40px', fontFamily: 'Manrope, sans-serif' }}
+      style={{
+        background: colors.cardDark,
+        padding: isMobile ? '40px 20px' : isTablet ? '48px 40px' : '48px 80px',
+        display: 'flex',
+        justifyContent: 'space-evenly',
+        flexWrap: 'wrap',
+        gap: isMobile ? '28px' : '40px',
+        fontFamily: 'Manrope, sans-serif',
+      }}
       initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ duration: 0.8 }} viewport={{ once: true }}>
       {[
         { value: 200000, label: 'Learners Skilled' },
@@ -207,8 +379,8 @@ const StatsSection = () => {
         { value: 5, label: 'Years of Excellence' },
         { value: 50, label: 'Partner Institutions' },
       ].map((stat, idx) => (
-        <div key={idx} style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '42px', fontWeight: 900, color: colors.blue, marginBottom: '6px', fontFamily: 'Manrope, sans-serif' }}>
+        <div key={idx} style={{ textAlign: 'center', minWidth: isMobile ? '120px' : '140px' }}>
+          <div style={{ fontSize: isMobile ? '34px' : '42px', fontWeight: 900, color: colors.blue, marginBottom: '6px', fontFamily: 'Manrope, sans-serif' }}>
             <CountUp end={stat.value} />
           </div>
           <div style={{ fontSize: '14px', color: '#C0C0C0', fontWeight: 500 }}>{stat.label}</div>
@@ -221,18 +393,31 @@ const StatsSection = () => {
 // ── ABOUT ──────────────────────────────────────────────────────────────────
 const AboutSection = () => {
   const ref = useRef(null)
+  const bp = useBreakpoint()
+  const isMobile = bp === 'mobile'
+  const isTablet = bp === 'tablet'
+
   return (
-    <section id="about" ref={ref} style={{ background: colors.white, padding: '96px 80px', fontFamily: 'Manrope, sans-serif' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '64px', alignItems: 'start' }}>
+    <section id="about" ref={ref} style={{
+      background: colors.white,
+      padding: isMobile ? '60px 20px' : isTablet ? '72px 40px' : '96px 80px',
+      fontFamily: 'Manrope, sans-serif',
+    }}>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+        gap: isMobile ? '40px' : isTablet ? '40px' : '64px',
+        alignItems: 'start',
+      }}>
         <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} viewport={{ once: true }}>
           <div style={{ fontSize: '12px', color: colors.blue, fontWeight: 700, letterSpacing: '2px', marginBottom: '12px' }}>ABOUT US</div>
-          <h2 style={{ fontSize: '40px', fontWeight: 800, color: colors.textDark, lineHeight: 1.2, marginBottom: '20px', fontFamily: 'Manrope, sans-serif' }}>
+          <h2 style={{ fontSize: isMobile ? '28px' : isTablet ? '32px' : '40px', fontWeight: 800, color: colors.textDark, lineHeight: 1.2, marginBottom: '20px', fontFamily: 'Manrope, sans-serif' }}>
             Bridging Commerce Education &amp; Industry
           </h2>
-          <p style={{ fontSize: '16px', color: '#374151', lineHeight: 1.8, marginBottom: '32px' }}>
+          <p style={{ fontSize: isMobile ? '15px' : '16px', color: '#374151', lineHeight: 1.8, marginBottom: '32px' }}>
             Annvil Technologies bridges commerce education and industry application — equipping universities, colleges and training institutes with cutting-edge experiential tools and certified skill training. FinTech integrates finance and digital innovation to transform financial services. In India, its rapid growth has created a strong demand for a FinTech-ready workforce. Annvil bridges this gap by enabling institutions to align curriculum, faculty capabilities, and applied learning with evolving FinTech industry needs.
           </p>
-          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginTop: '32px' }}>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '32px' }}>
             {['NEP 2020 Aligned', 'BFSI SSC Certified', '2,00,000+ Learners'].map((stat, idx) => (
               <span key={idx} style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '50px', padding: '10px 20px', fontSize: '14px', color: '#1D4ED8', fontWeight: 600, whiteSpace: 'nowrap' }}>
                 {stat}
@@ -241,7 +426,7 @@ const AboutSection = () => {
           </div>
         </motion.div>
         <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6 }} viewport={{ once: true }}>
-          <img src={aboutImg} style={{ width: '100%', height: '500px', objectFit: 'cover', borderRadius: '20px', display: 'block' }} alt="About Annvil" />
+          <img src={aboutImg} style={{ width: '100%', height: isMobile ? '280px' : isTablet ? '380px' : '500px', objectFit: 'cover', borderRadius: '20px', display: 'block' }} alt="About Annvil" />
         </motion.div>
       </div>
     </section>
@@ -252,6 +437,9 @@ const AboutSection = () => {
 const WhatWeProvideSection = () => {
   const ref = useRef(null)
   const [hoveredCard, setHoveredCard] = useState(null)
+  const bp = useBreakpoint()
+  const isMobile = bp === 'mobile'
+  const isTablet = bp === 'tablet'
 
   const cards = [
     { src: hero1, heading: 'Industry-Institute Enablement Programs', description: 'We bridge the gap between academic commerce education and real industry requirements through structured enablement programs on Commerce & Finance.' },
@@ -261,23 +449,31 @@ const WhatWeProvideSection = () => {
   ]
 
   return (
-    <section id="what-we-provide" ref={ref} style={{ background: '#000', padding: '96px 80px', fontFamily: 'Manrope, sans-serif' }}>
-      <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} viewport={{ once: true }} style={{ marginBottom: '60px' }}>
+    <section id="what-we-provide" ref={ref} style={{
+      background: '#000',
+      padding: isMobile ? '60px 20px' : isTablet ? '72px 40px' : '96px 80px',
+      fontFamily: 'Manrope, sans-serif',
+    }}>
+      <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} viewport={{ once: true }} style={{ marginBottom: '48px' }}>
         <div style={{ fontSize: '12px', color: '#7C3AED', fontWeight: 700, letterSpacing: '2px', marginBottom: '12px' }}>WHAT WE PROVIDE</div>
-        <h2 style={{ fontSize: '48px', fontWeight: 800, color: '#fff', marginBottom: '24px', fontFamily: 'Syne, sans-serif' }}>Our Core Offerings</h2>
+        <h2 style={{ fontSize: isMobile ? '28px' : isTablet ? '36px' : '48px', fontWeight: 800, color: '#fff', marginBottom: '24px', fontFamily: 'Syne, sans-serif' }}>Our Core Offerings</h2>
       </motion.div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: isMobile ? '1fr' : isTablet ? '1fr 1fr' : '1fr 1fr',
+        gap: '24px',
+      }}>
         {cards.map((card, idx) => (
           <motion.div key={idx}
-            style={{ background: '#111', border: '1px solid', borderColor: hoveredCard === idx ? '#7C3AED' : '#222', borderRadius: '20px', overflow: 'hidden', minHeight: '380px', display: 'flex', flexDirection: 'column', cursor: 'pointer', transition: 'border-color 0.3s ease' }}
+            style={{ background: '#111', border: '1px solid', borderColor: hoveredCard === idx ? '#7C3AED' : '#222', borderRadius: '20px', overflow: 'hidden', minHeight: isMobile ? '320px' : '380px', display: 'flex', flexDirection: 'column', cursor: 'pointer', transition: 'border-color 0.3s ease' }}
             initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: idx * 0.12 }} viewport={{ once: true }}
             whileHover={{ y: -6 }} onMouseEnter={() => setHoveredCard(idx)} onMouseLeave={() => setHoveredCard(null)}>
-            <div style={{ height: '200px', overflow: 'hidden', flexShrink: 0 }}>
+            <div style={{ height: isMobile ? '160px' : '200px', overflow: 'hidden', flexShrink: 0 }}>
               <img src={card.src} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.4s ease', transform: hoveredCard === idx ? 'scale(1.05)' : 'scale(1)' }} alt={card.heading} />
             </div>
-            <div style={{ padding: '28px 28px 32px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-              <h3 style={{ color: '#fff', fontFamily: 'Syne, sans-serif', fontSize: '19px', fontWeight: 700, lineHeight: 1.3, marginBottom: '12px' }}>{card.heading}</h3>
+            <div style={{ padding: isMobile ? '20px' : '28px 28px 32px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <h3 style={{ color: '#fff', fontFamily: 'Syne, sans-serif', fontSize: isMobile ? '16px' : '19px', fontWeight: 700, lineHeight: 1.3, marginBottom: '12px' }}>{card.heading}</h3>
               <p style={{ color: '#B0B0B0', fontFamily: 'Manrope, sans-serif', fontSize: '14px', lineHeight: 1.7, flex: 1, margin: 0 }}>{card.description}</p>
             </div>
           </motion.div>
@@ -290,26 +486,64 @@ const WhatWeProvideSection = () => {
 // ── CERTIFICATIONS ─────────────────────────────────────────────────────────
 const CertificationsSection = ({ onExplore }) => {
   const ref = useRef(null)
+  const bp = useBreakpoint()
+  const isMobile = bp === 'mobile'
+  const isTablet = bp === 'tablet'
+
   return (
-    <section id="certifications" ref={ref} style={{ background: '#F8F7FF', padding: '96px 80px', fontFamily: 'Manrope, sans-serif' }}>
+    <section id="certifications" ref={ref} style={{
+      background: '#F8F7FF',
+      padding: isMobile ? '60px 20px' : isTablet ? '72px 40px' : '96px 80px',
+      fontFamily: 'Manrope, sans-serif',
+    }}>
       <style>{`
-        #certifications .course-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:20px; margin-top:48px; }
-        #certifications .course-card { background:white; border:none; border-radius:20px; padding:32px 28px; min-height:160px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 2px 12px rgba(0,0,0,0.06); position:relative; overflow:hidden; transition:all 0.3s ease; cursor:pointer; }
-        #certifications .course-card .course-accent { position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,#7C3AED,#2563EB); border-radius:20px 20px 0 0; transition:all 0.3s ease; }
-        #certifications .course-card:hover { box-shadow:0 16px 40px rgba(124,58,237,0.15); transform:translateY(-6px); }
-        #certifications .course-title { color:#111; font-family:Syne,sans-serif; font-size:15px; font-weight:700; line-height:1.5; letter-spacing:-0.2px; margin-top:16px; }
-        #certifications .course-bottom { display:flex; align-items:center; justify-content:space-between; margin-top:20px; }
-        #certifications .course-pill { background:linear-gradient(135deg,#EDE9FE,#DBEAFE); color:#5B21B6; border-radius:50px; padding:5px 14px; font-size:11px; font-family:Manrope,sans-serif; font-weight:600; }
-        @media(max-width:768px){#certifications .course-grid{grid-template-columns:repeat(2,1fr);}}
-        @media(max-width:480px){#certifications .course-grid{grid-template-columns:1fr;}}
+        #certifications .course-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 20px;
+          margin-top: 48px;
+        }
+        #certifications .course-card {
+          background: white; border: none; border-radius: 20px; padding: 32px 28px;
+          min-height: 160px; display: flex; flex-direction: column;
+          justify-content: space-between; box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+          position: relative; overflow: hidden; transition: all 0.3s ease; cursor: pointer;
+        }
+        #certifications .course-card .course-accent {
+          position: absolute; top: 0; left: 0; right: 0; height: 3px;
+          background: linear-gradient(90deg, #7C3AED, #2563EB);
+          border-radius: 20px 20px 0 0; transition: all 0.3s ease;
+        }
+        #certifications .course-card:hover {
+          box-shadow: 0 16px 40px rgba(124,58,237,0.15); transform: translateY(-6px);
+        }
+        #certifications .course-title {
+          color: #111; font-family: Syne, sans-serif; font-size: 15px;
+          font-weight: 700; line-height: 1.5; letter-spacing: -0.2px; margin-top: 16px;
+        }
+        #certifications .course-bottom {
+          display: flex; align-items: center; justify-content: space-between; margin-top: 20px;
+        }
+        #certifications .course-pill {
+          background: linear-gradient(135deg, #EDE9FE, #DBEAFE); color: #5B21B6;
+          border-radius: 50px; padding: 5px 14px; font-size: 11px;
+          font-family: Manrope, sans-serif; font-weight: 600;
+        }
+        @media (max-width: 1023px) {
+          #certifications .course-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 767px) {
+          #certifications .course-grid { grid-template-columns: 1fr; gap: 14px; margin-top: 32px; }
+          #certifications .course-card { padding: 20px 18px; min-height: auto; }
+        }
       `}</style>
 
-      <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} viewport={{ once: true }} style={{ marginBottom: '60px' }}>
+      <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} viewport={{ once: true }} style={{ marginBottom: isMobile ? '32px' : '60px' }}>
         <div style={{ fontSize: '12px', color: colors.blue, fontWeight: 700, letterSpacing: '2px', marginBottom: '12px' }}>BFSI SSC OF INDIA CERTIFIED</div>
-        <h2 style={{ fontSize: '38px', fontWeight: 800, color: colors.textDark, marginBottom: '16px', fontFamily: 'Manrope, sans-serif' }}>
+        <h2 style={{ fontSize: isMobile ? '26px' : isTablet ? '30px' : '38px', fontWeight: 800, color: colors.textDark, marginBottom: '16px', fontFamily: 'Manrope, sans-serif' }}>
           BFSI SSC Of INDIA Certified Learning Programs
         </h2>
-        <p style={{ fontSize: '16px', color: '#374151', fontFamily: 'Manrope, sans-serif' }}>
+        <p style={{ fontSize: isMobile ? '14px' : '16px', color: '#374151', fontFamily: 'Manrope, sans-serif' }}>
           Certifications endorsed by NCVET &amp; BFSI Sector Skill Council of India under Ministry of Skill Development &amp; Entrepreneurship, Govt. of India.
         </p>
       </motion.div>
@@ -340,10 +574,10 @@ const CertificationsSection = ({ onExplore }) => {
         ))}
       </div>
 
-      <div style={{ marginTop: '60px', textAlign: 'center' }}>
+      <div style={{ marginTop: isMobile ? '40px' : '60px', textAlign: 'center' }}>
         <motion.button
           onClick={() => { window.scrollTo(0, 0); onExplore() }}
-          style={{ background: '#7C3AED', color: '#fff', border: 'none', borderRadius: '50px', padding: '16px 40px', fontSize: '16px', fontFamily: 'Syne, sans-serif', fontWeight: 600, cursor: 'pointer' }}
+          style={{ background: '#7C3AED', color: '#fff', border: 'none', borderRadius: '50px', padding: isMobile ? '14px 32px' : '16px 40px', fontSize: isMobile ? '15px' : '16px', fontFamily: 'Syne, sans-serif', fontWeight: 600, cursor: 'pointer', width: isMobile ? '100%' : 'auto' }}
           whileHover={{ scale: 1.02, y: -2 }}
           onMouseEnter={e => e.target.style.background = '#6D28D9'}
           onMouseLeave={e => e.target.style.background = '#7C3AED'}>
@@ -357,6 +591,10 @@ const CertificationsSection = ({ onExplore }) => {
 // ── PARTNERS ───────────────────────────────────────────────────────────────
 const PartnersSection = () => {
   const ref = useRef(null)
+  const bp = useBreakpoint()
+  const isMobile = bp === 'mobile'
+  const isTablet = bp === 'tablet'
+
   const topics = ['Income Tax','GST','Financial Accounting','Cost Accounting','Business Laws','MCA','FSSAI','DSC','EPF/ESIC','Import/Export','MSME','Corporate Laws','Financial Management']
 
   useEffect(() => {
@@ -374,17 +612,26 @@ const PartnersSection = () => {
   }, [])
 
   return (
-    <section id="partners" ref={ref} style={{ background: '#000', padding: '100px 80px', fontFamily: 'Manrope, sans-serif' }}>
+    <section id="partners" ref={ref} style={{
+      background: '#000',
+      padding: isMobile ? '60px 20px' : isTablet ? '72px 40px' : '100px 80px',
+      fontFamily: 'Manrope, sans-serif',
+    }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} viewport={{ once: true }}>
           <div style={{ fontSize: '12px', color: '#999', fontWeight: 700, letterSpacing: '3px' }}>PLATFORM</div>
-          <h2 style={{ fontSize: '52px', fontWeight: 800, color: '#fff', marginTop: '12px', fontFamily: 'Manrope, sans-serif' }}>Powered by Nergy Vidya</h2>
-          <p style={{ fontSize: '17px', color: '#C0C0C0', marginTop: '16px', maxWidth: '600px' }}>
+          <h2 style={{ fontSize: isMobile ? '28px' : isTablet ? '36px' : '52px', fontWeight: 800, color: '#fff', marginTop: '12px', fontFamily: 'Manrope, sans-serif' }}>Powered by Nergy Vidya</h2>
+          <p style={{ fontSize: isMobile ? '15px' : '17px', color: '#C0C0C0', marginTop: '16px', maxWidth: '600px' }}>
             India's 1st SL &amp; IL Tech platform for commerce education. 120+ experiential tools. 2,00,000+ learners skilled.
           </p>
         </motion.div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '24px', marginTop: '48px' }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : isTablet ? '1fr 1fr' : 'repeat(3, 1fr)',
+          gap: isMobile ? '16px' : '24px',
+          marginTop: '48px',
+        }}>
           {[
             { title: 'Innovative Cloud-Based Platform', description: 'Accessible anytime, anywhere through a secure and scalable cloud infrastructure built for institutions.' },
             { title: 'Dashboard to Monitor Student Progress', description: 'Real-time tracking of student performance, engagement and learning outcomes in one place.' },
@@ -394,10 +641,10 @@ const PartnersSection = () => {
             { title: 'Digital India Mission Endorsed', description: 'Ministry of Skill Development and Entrepreneurship recommended our Essentials of Digital Statutory e-Filing course under the Digital India Mission by Govt. of India.' },
           ].map((card, idx) => (
             <motion.div key={idx}
-              style={{ background: '#111', border: '1px solid #1f1f1f', borderRadius: '16px', padding: '32px 28px', transition: 'border-color 0.3s, transform 0.3s' }}
+              style={{ background: '#111', border: '1px solid #1f1f1f', borderRadius: '16px', padding: isMobile ? '24px 20px' : '32px 28px', transition: 'border-color 0.3s, transform 0.3s' }}
               initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} whileHover={{ borderColor: '#7C3AED', y: -4 }} transition={{ duration: 0.6 }} viewport={{ once: true }}>
               <div style={{ width: '40px', height: '3px', background: '#7C3AED', borderRadius: '2px', marginBottom: '20px' }} />
-              <h3 style={{ color: '#fff', fontFamily: 'Syne, sans-serif', fontSize: '16px', fontWeight: 700, lineHeight: 1.4, marginBottom: '12px' }}>{card.title}</h3>
+              <h3 style={{ color: '#fff', fontFamily: 'Syne, sans-serif', fontSize: isMobile ? '15px' : '16px', fontWeight: 700, lineHeight: 1.4, marginBottom: '12px' }}>{card.title}</h3>
               <p style={{ color: '#A0A0A0', fontFamily: 'Manrope, sans-serif', fontSize: '14px', lineHeight: 1.7, margin: 0 }}>{card.description}</p>
             </motion.div>
           ))}
@@ -420,6 +667,10 @@ const PartnersSection = () => {
 // ── CONTACT ────────────────────────────────────────────────────────────────
 const ContactSection = () => {
   const ref = useRef(null)
+  const bp = useBreakpoint()
+  const isMobile = bp === 'mobile'
+  const isTablet = bp === 'tablet'
+
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', institution: '', designation: '', interest: '' })
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -428,14 +679,7 @@ const ContactSection = () => {
   const handleChange = e => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))
 
   const handleSubmit = () => {
-    if (
-      !formData.name ||
-      !formData.email ||
-      !formData.phone ||
-      !formData.institution ||
-      !formData.designation ||
-      !formData.interest
-    ) {
+    if (!formData.name || !formData.email || !formData.phone || !formData.institution || !formData.designation || !formData.interest) {
       setError('Please fill in all fields before submitting.')
       return
     }
@@ -458,10 +702,7 @@ const ContactSection = () => {
     .then(() => {
       setSubmitted(true)
       setLoading(false)
-      setFormData({
-        name: '', email: '', phone: '',
-        institution: '', designation: '', interest: ''
-      })
+      setFormData({ name: '', email: '', phone: '', institution: '', designation: '', interest: '' })
       setTimeout(() => setSubmitted(false), 6000)
     })
     .catch((err) => {
@@ -472,15 +713,26 @@ const ContactSection = () => {
   }
 
   const inputStyle = {
-    width: '100%', padding: '12px 16px', borderRadius: '8px',
-    border: '1.5px solid #D1D5DB', fontSize: '15px', outline: 'none',
-    fontFamily: 'Manrope, sans-serif', boxSizing: 'border-box',
-    color: '#111', background: '#fff', transition: 'border-color 0.2s',
+    width: '100%',
+    padding: '12px 16px',
+    borderRadius: '8px',
+    border: '1.5px solid #D1D5DB',
+    fontSize: '16px', // 16px prevents iOS auto-zoom
+    outline: 'none',
+    fontFamily: 'Manrope, sans-serif',
+    boxSizing: 'border-box',
+    color: '#111',
+    background: '#fff',
+    transition: 'border-color 0.2s',
   }
 
   const labelStyle = {
-    display: 'block', marginBottom: '8px', fontWeight: 600,
-    fontSize: '14px', color: '#111', fontFamily: 'Manrope, sans-serif',
+    display: 'block',
+    marginBottom: '8px',
+    fontWeight: 600,
+    fontSize: '14px',
+    color: '#111',
+    fontFamily: 'Manrope, sans-serif',
   }
 
   const contactItems = [
@@ -491,38 +743,41 @@ const ContactSection = () => {
   ]
 
   return (
-    <section id="contact" ref={ref} style={{ background: colors.lightBg, padding: '96px 80px', fontFamily: 'Manrope, sans-serif' }}>
-      <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} viewport={{ once: true }} style={{ marginBottom: '60px', textAlign: 'center' }}>
+    <section id="contact" ref={ref} style={{
+      background: colors.lightBg,
+      padding: isMobile ? '60px 20px' : isTablet ? '72px 40px' : '96px 80px',
+      fontFamily: 'Manrope, sans-serif',
+    }}>
+      <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} viewport={{ once: true }}
+        style={{ marginBottom: isMobile ? '40px' : '60px', textAlign: 'center' }}>
         <div style={{ fontSize: '12px', color: colors.blue, fontWeight: 700, letterSpacing: '2px', marginBottom: '12px' }}>CONTACT US</div>
-        <h2 style={{ fontSize: '38px', fontWeight: 800, color: colors.textDark, marginBottom: '16px', fontFamily: 'Manrope, sans-serif' }}>
+        <h2 style={{ fontSize: isMobile ? '26px' : isTablet ? '30px' : '38px', fontWeight: 800, color: colors.textDark, marginBottom: '16px', fontFamily: 'Manrope, sans-serif' }}>
           Let's Transform Your Commerce &amp; Finance Department
         </h2>
-        <p style={{ fontSize: '16px', color: '#374151', fontFamily: 'Manrope, sans-serif', maxWidth: 560, margin: '0 auto' }}>
+        <p style={{ fontSize: isMobile ? '14px' : '16px', color: '#374151', fontFamily: 'Manrope, sans-serif', maxWidth: 560, margin: '0 auto' }}>
           Reach out for FDP registrations, institutional partnerships, demo requests. Our team responds within 24 hours.
         </p>
       </motion.div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px' }}>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: isMobile ? '1fr' : isTablet ? '1fr' : '1fr 1fr',
+        gap: isMobile ? '32px' : isTablet ? '32px' : '40px',
+        maxWidth: isTablet ? '600px' : '100%',
+        margin: isTablet ? '0 auto' : '0',
+      }}>
         {/* Form */}
-        <motion.div initial={{ opacity: 0, x: -40 }} whileInView={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }} viewport={{ once: true }}>
+        <motion.div initial={{ opacity: 0, x: isMobile ? 0 : -40 }} whileInView={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }} viewport={{ once: true }}>
           {error && (
             <motion.div
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               style={{
-                background: '#FEE2E2',
-                border: '1px solid #FCA5A5',
-                color: '#991B1B',
-                padding: '14px 16px',
-                borderRadius: '8px',
-                textAlign: 'center',
-                marginBottom: '16px',
-                fontWeight: 600,
-                fontFamily: 'Manrope, sans-serif',
-                fontSize: '14px'
-              }}
-            >
+                background: '#FEE2E2', border: '1px solid #FCA5A5', color: '#991B1B',
+                padding: '14px 16px', borderRadius: '8px', textAlign: 'center',
+                marginBottom: '16px', fontWeight: 600, fontFamily: 'Manrope, sans-serif', fontSize: '14px',
+              }}>
               {error}
             </motion.div>
           )}
@@ -584,55 +839,30 @@ const ContactSection = () => {
               disabled={loading}
               style={{
                 background: loading ? '#93C5FD' : colors.blue,
-                color: '#fff',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '14px 28px',
-                fontWeight: 700,
-                fontSize: '16px',
+                color: '#fff', border: 'none', borderRadius: '8px',
+                padding: '14px 28px', fontWeight: 700, fontSize: '16px',
                 cursor: loading ? 'not-allowed' : 'pointer',
-                fontFamily: 'Manrope, sans-serif',
-                marginTop: '12px',
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '10px',
-                transition: 'background 0.2s',
-                opacity: loading ? 0.85 : 1,
+                fontFamily: 'Manrope, sans-serif', marginTop: '12px',
+                width: '100%', display: 'flex', alignItems: 'center',
+                justifyContent: 'center', gap: '10px',
+                transition: 'background 0.2s', opacity: loading ? 0.85 : 1,
               }}
-              onMouseEnter={e => {
-                if (!loading) e.currentTarget.style.background = colors.blueDark
-              }}
-              onMouseLeave={e => {
-                if (!loading) e.currentTarget.style.background = colors.blue
-              }}
-            >
+              onMouseEnter={e => { if (!loading) e.currentTarget.style.background = colors.blueDark }}
+              onMouseLeave={e => { if (!loading) e.currentTarget.style.background = colors.blue }}>
               {loading ? (
                 <>
-                  <span style={{
-                    width: 18,
-                    height: 18,
-                    border: '2.5px solid rgba(255,255,255,0.3)',
-                    borderTopColor: '#fff',
-                    borderRadius: '50%',
-                    display: 'inline-block',
-                    animation: 'spin 0.7s linear infinite',
-                    flexShrink: 0,
-                  }} />
+                  <span style={{ width: 18, height: 18, border: '2.5px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite', flexShrink: 0 }} />
                   Sending your enquiry...
                 </>
-              ) : (
-                'Submit Enquiry'
-              )}
+              ) : 'Submit Enquiry'}
             </button>
           </div>
         </motion.div>
 
-        {/* Contact info card with icons */}
+        {/* Contact info card */}
         <motion.div
-          style={{ background: '#0F172A', borderRadius: '20px', padding: '40px', color: '#fff', height: 'fit-content', border: '1px solid #1E293B' }}
-          initial={{ opacity: 0, x: 40 }} whileInView={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }} viewport={{ once: true }}>
+          style={{ background: '#0F172A', borderRadius: '20px', padding: isMobile ? '28px 20px' : '40px', color: '#fff', height: 'fit-content', border: '1px solid #1E293B' }}
+          initial={{ opacity: 0, x: isMobile ? 0 : 40 }} whileInView={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }} viewport={{ once: true }}>
 
           <h3 style={{ fontFamily: 'Syne, sans-serif', fontSize: '22px', fontWeight: 700, color: '#fff', marginBottom: '8px' }}>
             Get in Touch
@@ -648,11 +878,7 @@ const ContactSection = () => {
                 padding: '18px 0',
                 borderBottom: idx < contactItems.length - 1 ? '1px solid #1E293B' : 'none',
               }}>
-                <div style={{
-                  width: '42px', height: '42px', background: '#1E293B', borderRadius: '10px',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  flexShrink: 0, color: '#60A5FA',
-                }}>
+                <div style={{ width: '42px', height: '42px', background: '#1E293B', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: '#60A5FA' }}>
                   {item.icon}
                 </div>
                 <div>
@@ -681,23 +907,40 @@ const ContactSection = () => {
 
 // ── FOOTER ─────────────────────────────────────────────────────────────────
 const Footer = () => {
+  const bp = useBreakpoint()
+  const isMobile = bp === 'mobile'
+  const isTablet = bp === 'tablet'
+
   const scrollToSection = id => {
     const el = document.getElementById(id)
     if (el) el.scrollIntoView({ behavior: 'smooth' })
   }
 
   return (
-    <footer style={{ background: colors.darkBg, color: '#fff', padding: '48px 80px', fontFamily: 'Manrope, sans-serif' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+    <footer style={{
+      background: colors.darkBg,
+      color: '#fff',
+      padding: isMobile ? '40px 20px' : isTablet ? '48px 40px' : '48px 80px',
+      fontFamily: 'Manrope, sans-serif',
+    }}>
+      <div style={{
+        display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
+        justifyContent: 'space-between',
+        alignItems: isMobile ? 'flex-start' : 'center',
+        marginBottom: '24px',
+        gap: isMobile ? '24px' : '16px',
+        flexWrap: 'wrap',
+      }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <img src={annvilLogo} style={{ height: '32px', objectFit: 'contain' }} alt="Annvil" onError={e => { e.target.style.display = 'none' }} />
           <div style={{ fontWeight: 800, fontSize: '18px' }}>Annvil Technologies</div>
         </div>
-        <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: isMobile ? '16px' : '24px', flexWrap: 'wrap' }}>
           {['Home','About','What We Provide','Certifications','Partners','Contact'].map((link, idx) => (
             <button key={link}
               onClick={() => scrollToSection(['home','about','what-we-provide','certifications','partners','contact'][idx])}
-              style={{ background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer', fontSize: '14px', fontFamily: 'Manrope, sans-serif', transition: 'color 0.2s' }}
+              style={{ background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer', fontSize: isMobile ? '13px' : '14px', fontFamily: 'Manrope, sans-serif', transition: 'color 0.2s', padding: '4px 0' }}
               onMouseEnter={e => e.target.style.color = '#fff'}
               onMouseLeave={e => e.target.style.color = '#9CA3AF'}>
               {link}
@@ -736,6 +979,9 @@ export default function App() {
       @keyframes spin {
         to { transform: rotate(360deg) }
       }
+      * { box-sizing: border-box; }
+      body { overflow-x: hidden; }
+      img { max-width: 100%; }
     `
     document.head.appendChild(heroStyle)
 
@@ -749,7 +995,7 @@ export default function App() {
   if (showCourses) return <CoursesPage onBack={() => setShowCourses(false)} />
 
   return (
-    <div style={{ background: colors.darkBg }}>
+    <div style={{ background: colors.darkBg, overflowX: 'hidden' }}>
       <Navbar />
       <HeroSection />
       <StatsSection />
